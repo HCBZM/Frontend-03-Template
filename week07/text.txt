@@ -1,0 +1,215 @@
+﻿<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" >
+    <title>practice</title>
+</head>
+<body>
+    <script>
+        let all = Object.getOwnPropertyNames(window); 
+        let filtered = all;
+
+        // ecma-262 global object; http://www.ecma-international.org/ecma-262/#sec-global-object
+        let ecma262 = ['globalThis', 'Infinity', 'NaN', 'undefined', 'eval', 'isFinite', 'isNaN', 'parseFloat', 'parseInt', 'decodeURI', 'decodeURIComponent', 'encodeURI', 'encodeURIComponent', 'Array', 'ArrayBuffer', 'BigInt', 'BigInt64Array', 'BigUint64Array', 'Boolean', 'DataView', 'Date', 'Error', 'EvalError', 'Float32Array', 'Float64Array', 'Function', 'Int8Array', 'Int16Array', 'Int32Array', 'Map', 'Number', 'Object', 'Promise', 'Proxy', 'RangeError', 'ReferenceError', 'RegExp', 'Set', 'SharedArrayBuffer', 'String', 'Symbol', 'SyntaxError', 'TypeError', 'Uint8Array', 'Uint8ClampedArray', 'Uint16Array', 'Uint32Array', 'URIError', 'WeakMap', 'WeakSet', 'Atomics', 'JSON', 'Math', 'Reflect']
+        console.log('#### ecma-262 global object already filter', filter(filtered, ecma262));
+        
+        // https://tc39.es/ecma402/#intl-object
+        let ecma402 = ['Intl'];
+        console.log('#### ecma402 already filter', filter(filtered, ecma402));
+
+        //subclass of node
+        filtered = filtered.filter(e => {
+            try {
+                return !(window[e].prototype instanceof Node);
+            } catch (err) {
+                return true;
+            }
+        });
+        filtered = filtered.filter(e => e !== 'Node');
+        console.log('Nodes', filtered.length);
+
+        // events
+        filtered = filtered.filter(v => !v.match(/^on/));
+        console.log('events', filtered.length);
+
+        // webkit
+        filtered = filtered.filter(v => !v.match(/^webkit/i));
+        console.log('webkit', filtered.length);
+
+        // setTimeout
+        console.log('#### timer already filter', filter(filtered, ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'requestAnimationFrame']));
+
+        /****** whatwg  *******/
+        //https://console.spec.whatwg.org/
+        filtered = filtered.filter(v => v !== 'console');
+        console.log('webkit', filtered.length);
+
+        //dom  https://dom.spec.whatwg.org/
+        let dom = ['Event', 'CustomEvent', 'NodeList', 'HTMLCollection', 'AbortController', 'AbortSignal', 'MutationObserver', 'MutationRecord', 'Range', 'NodeIterator', 'TreeWalker', 'NodeFilter', 'DOMTokenList', 'XPathResult', 'XPathExpression', 'XPathEvaluator', 'StaticRange'];
+        console.log('#### dom already filter', filter(filtered, dom));
+
+        // fetch https://fetch.spec.whatwg.org/
+        let Fetch = ['fetch', 'Headers', 'Request', 'Response'];
+        console.log('#### Fetch already filter', filter(filtered, Fetch));
+
+        // Notification https://notifications.spec.whatwg.org
+        let notification = ['Notification'];
+        console.log('#### notification already filter', filter(filtered, notification));
+
+        // https://streams.spec.whatwg.org/
+        let streams = ['ByteLengthQueuingStrategy', 'CountQueuingStrategy', 'ReadableStream', 'WritableStream'];
+        console.log('#### streams API already filter', filter(filtered, streams));
+
+        //https://html.spec.whatwg.org/
+        let html = ['Window', 'history', 'location', 'WebSocket', 'CloseEvent', 'Storage', 'sessionStorage', 'localStorage', 'StorageEvent', 'PluginArray', 'MimeType', 'MimeTypeArray', 'EventSource', 'Worker', 'ImageBitmapRenderingContext', 'CanvasRenderingContext2D', 'ValidityState', 'TimeRanges', 'TextTrackList', 'TextTrackCueList', 'TextTrackCue', 'TextTrack', 'TextMetrics', 'TextEvent'];
+        console.log('#### html API already filter', filter(filtered, html));
+
+        //https://encoding.spec.whatwg.org
+        let encoding = ['TextEncoder', 'TextDecoder', 'TextEncoderStream', 'TextDecoderStream'];
+        console.log('#### encoding API already filter', filter(filtered, encoding));
+
+        // https://url.spec.whatwg.org/
+        let url = ['URL', 'URLSearchParams'];
+        console.log('#### url API already filter', filter(filtered, url));
+
+        // https://xhr.spec.whatwg.org/
+        let xhr = ['XMLHttpRequest', 'XMLHttpRequestUpload', 'XMLHttpRequestEventTarget'];
+        console.log('#### xhr API already filter', filter(filtered, xhr));
+
+
+        /********* khronos webgl *********/
+        // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15
+        filtered = filtered.filter(v => !v.match(/^WebGL/));
+        console.log('webgl ', filtered.length);
+
+
+        /****** w3c *******/
+        // https://www.w3.org/TR/WebCryptoAPI/
+        let WebCryptoAPI = ['SubtleCrypto', 'Crypto', 'CryptoKey'];
+        console.log('#### SubtleCrypto already filter', filter(filtered, WebCryptoAPI));
+
+        //Audio https://www.w3.org/TR/2020/CR-webaudio-20200611/
+        let Audio = ['WaveShaperNode', 'StereoPannerNode', 'PeriodicWave', 'PannerNode', 'OscillatorNode', 'OfflineAudioContext', 'OfflineAudioCompletionEvent', 'MediaStreamAudioSourceNode', 'MediaStreamAudioDestinationNode', 'GainNode', 'DynamicsCompressorNode', 'DelayNode', 'AudioWorkletNode', 'BaseAudioContext', 'AudioScheduledSourceNode', 'AudioProcessingEvent', 'AudioParamMap', 'AudioParam', 'AudioNode', 'AudioListener', 'AudioDestinationNode', 'AudioContext', 'AudioBufferSourceNode', 'AudioBuffer', 'AnalyserNode', 'MediaElementAudioSourceNode', 'IIRFilterNode', 'ConvolverNode', 'ConstantSourceNode', 'ChannelSplitterNode', 'ChannelMergerNode', 'BiquadFilterNode'];
+        console.log('#### Audio already filter', filter(filtered, Audio));
+
+        // webvtt https://www.w3.org/TR/2019/CR-webvtt1-20190404
+        let webVTT = ['VTTCue', 'VTTRegion'];
+        console.log('#### webVTT already filter', filter(filtered, webVTT));
+
+        // touch-events https://www.w3.org/TR/2013/REC-touch-events-20131010/
+        let touchEvents = ['TouchList', 'TouchEvent', 'Touch'];
+        console.log('#### touchEvents already filter', filter(filtered, touchEvents));
+
+        /********cssom**********/
+            let cssomRoutein = ['getComputedStyle', 'innerWidth', 'innerHeight', 'devicePixelRatio​', 'outerWidth', 'outerHeight', 'screen​', 'open', '​resizeBy', 'resizeTo', '​moveBy', 'moveTo', 'scroll', '​scrollX', 'scrollY'];
+            console.log('#### cssomRoutein already filter', filter(filtered, cssomRoutein));
+            // cssOM https://www.w3.org/TR/2016/WD-cssom-1-20160317/
+            let cssOM = ['StyleSheetList', 'StyleSheet', 'MediaList'];
+            console.log('#### cssOM already filter', filter(filtered, cssOM));
+
+            // cssTypedOm https://www.w3.org/TR/2018/WD-css-typed-om-1-20180410/
+            let cssTypedOm = ['StylePropertyMapReadOnly', 'StylePropertyMap'];
+            console.log('#### cssTypedOm already filter', filter(filtered, cssTypedOm));
+            
+            filtered = filtered.filter(v => !v.match(/^CSS/));
+            console.log('cssTypedOm, cssOM', filtered.length);
+            
+            // cssom-view https://www.w3.org/TR/cssom-view-1/
+            let cssomView = ['MediaQueryList', 'Screen', 'MediaQueryListEvent'];
+            console.log('#### cssomView already filter', filter(filtered, cssomView));
+
+
+        // web midi（Musical Instrument Digital Interface） https://www.w3.org/TR/2015/WD-webmidi-20150317/
+        let webmidi = ['MIDIPort', 'MIDIOutputMap', 'MIDIOutput', 'MIDIMessageEvent', 'MIDIInputMap', 'MIDIInput', 'MIDIConnectionEvent', 'MIDIAccess'];
+        console.log('#### webmidi already filter', filter(filtered, webmidi));
+
+        // IndexedDB https://www.w3.org/TR/2018/REC-IndexedDB-2-20180130/
+        let IndexedDB = ['IDBVersionChangeEvent', 'IDBTransaction', 'IDBRequest', 'IDBOpenDBRequest', 'IDBObjectStore', 'IDBKeyRange', 'IDBIndex', 'IDBFactory', 'IDBDatabase', 'IDBCursorWithValue', 'IDBCursor'];
+        console.log('#### IndexedDB already filter', filter(filtered, IndexedDB));
+
+        // WebRTC 实时通信
+        let  WebRTC = ['RTCTrackEvent', 'RTCStatsReport', 'RTCSessionDescription', 'RTCRtpTransceiver', 'RTCRtpSender', 'RTCRtpReceiver', 'RTCPeerConnectionIceEvent', 'RTCPeerConnection', 'RTCIceCandidate', 'RTCErrorEvent', 'RTCError', 'RTCDataChannelEvent', 'RTCDataChannel', 'RTCDTMFToneChangeEvent', 'RTCDTMFSender', 'RTCCertificate'];
+        console.log('#### WebRTC already filter', filter(filtered, WebRTC));
+
+        // SVG  https://www.w3.org/TR/2018/CR-SVG2-20181004/
+        filtered = filtered.filter(v => !v.match(/^SVG/));
+        console.log('SVG', filtered.length);
+
+        // screen-orientation https://www.w3.org/TR/2020/WD-screen-orientation-20200417/
+        let screenOrientation = ['ScreenOrientation'];
+        console.log('#### screenOrientation already filter', filter(filtered, screenOrientation));
+
+
+        /*********performance*******/
+            // performance https://www.w3.org/TR/2019/WD-performance-timeline-2-20191024/
+            filtered = filtered.filter(v => !v.match(/^Performance/));
+            console.log('Performance', filtered.length);
+
+        /*****media******/
+            // media-stream https://www.w3.org/TR/2019/CR-mediacapture-streams-20190702/ 
+            let mediaStream = ['MediaStreamTrackEvent', 'MediaStreamTrack', 'OverconstrainedError', 'MediaStream', 'InputDeviceInfo'];
+            console.log('#### mediaStream already filter', filter(filtered, mediaStream));
+
+            // mediastream-recording  https://www.w3.org/TR/mediastream-recording
+            let mediastreamRecording = ['MediaRecorder', 'BlobEvent'];
+            console.log('#### mediastreamRecording already filter', filter(filtered, mediastreamRecording));
+
+            // imageCapture https://www.w3.org/TR/2017/WD-image-capture-20170621
+            let imageCapture = ['PhotoCapabilities', 'MediaSettingsRange', 'ImageCapture'];
+            console.log('#### imageCapture already filter', filter(filtered, imageCapture));
+
+            // mediaEncrypted https://www.w3.org/TR/2017/REC-encrypted-media-20170918
+            let mediaEncrypted = ['MediaEncryptedEvent', 'close'];
+            console.log('#### mediaEncrypted already filter', filter(filtered, mediaEncrypted));
+
+            // media-source https://www.w3.org/TR/2016/REC-media-source-20161117/
+            let mediaSource = ['SourceBufferList', 'SourceBuffer', 'MediaSource'];
+            console.log('#### mediaSource already filter', filter(filtered, mediaSource));
+
+
+        // ServiceWorker  https://w3c.github.io/ServiceWorker/ https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
+        let serviceWorker = ['Cache', 'CacheStorage', 'SyncManager', 'ServiceWorker', 'ServiceWorkerContainer', 'ServiceWorkerRegistration']; 
+        console.log('#### serviceWorker already filter', filter(filtered, serviceWorker));
+
+
+        // gamepad https://www.w3.org/TR/2020/WD-gamepad-20200618/
+        let gamepad = ['GamepadEvent', 'Gamepad', 'GamepadButton'];
+        console.log('#### gamepad already filter', filter(filtered, gamepad));
+
+        // battery https://www.w3.org/TR/2016/CR-battery-status-20160707
+        let battery = ['BatteryManager'];
+        console.log('#### battery already filter', filter(filtered, battery));
+
+        // device orientationEvent https://www.w3.org/TR/2019/WD-orientation-event-20190416/
+        let orientationEvent = ['DeviceMotionEventRotationRate', 'DeviceMotionEventAcceleration'];
+        console.log('#### orientationEvent already filter', filter(filtered, orientationEvent));
+
+        // authenticator  https://www.w3.org/TR/2019/REC-webauthn-1-20190304/
+        let authenticator = ['PublicKeyCredential', 'AuthenticatorResponse', 'AuthenticatorAttestationResponse', 'AuthenticatorAssertionResponse'];
+        console.log('#### authenticator already filter', filter(filtered, authenticator));
+
+        // sensor  https://www.w3.org/TR/2019/CR-generic-sensor-20191212
+        let sensor = ['Sensor', 'RelativeOrientationSensor', 'OrientationSensor', 'LinearAccelerationSensor'];
+        console.log('#### sensor already filter', filter(filtered, sensor));
+
+
+        // Event
+        filtered = filtered.filter(v => !v.match(/Event$/));
+        console.log('events', filtered.length);
+
+        // 废弃API
+        let deserted = ['escape', 'unescape', 'ScriptProcessorNode', 'Plugin', 'DOMError'];
+        console.log('#### deserted API already filter', filter(filtered, deserted));
+
+        // USB
+        filtered = filtered.filter(v => !v.match(/^USB/))
+        console.log('USB', filtered.length);
+
+        function filter(target, source) {
+            console.log(`\ntarget: ${target.length}`, `source: ${source.length}`)
+            filtered = target.filter(v => !source.some(cv => cv === v));
+            return filtered.length;
+        }
+    </script>
+</body>
+</html>
