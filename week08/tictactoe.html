@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .cell {
+            display: inline-block;
+            width: 100px;
+            height: 100px;
+            line-height: 100px;
+            border: 1px solid #000;
+            font-size: 50px;
+            font-weight: bold;
+            vertical-align: middle;
+            text-align: center;
+            margin-right: -1px;
+            margin-bottom: -1px;
+        }
+    </style>
+</head>
+<body>
+    <div id="board" class="board"></div>
+
+    <script>
+        /*
+            棋盘3*3渲染；每点三个状态：null, X, O；
+            单机下子；每点只能下一次，判断输赢；
+        */
+        let pattern = [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0]
+        ];
+
+        let color = 1;
+        let winner = '';
+
+        show(pattern);
+
+        // 渲染出棋盘；
+        function show(pattern) {
+            let board = document.getElementById('board');
+            board.innerHTML = '';
+            let fragment = document.createDocumentFragment();
+            for (let i = 0, len = pattern.length; i < len; i ++) {
+                for (let j = 0; j < len; j ++) {
+                    let cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.textContent = pattern[i][j] === 0 ? '' : 
+                        pattern[i][j] === 1 ? 'X' : 'O';
+                    // 添加单机落子事件
+                    pattern[i][j] || cell.addEventListener('click', () => move(j, i, pattern));
+                    fragment.appendChild(cell);
+                }
+                fragment.appendChild(document.createElement('br'));
+            }
+            board.appendChild(fragment);
+        }
+
+        // 单机落子的事件
+        function move(x, y, pattern) {
+            if (winner) return;
+            pattern[y][x] = color;
+            // 判断输赢
+            let win = isWin(pattern);
+            if (win) {
+                console.log(`${win === 1 ? 'X' : 'O'} is Winner!`);
+                winner = win;
+            };
+            color = 3 - color;
+            show(pattern);
+        }
+        
+        // 判断输赢的方法
+        function isWin(pattern) {
+            let Len = pattern.length;
+            
+            for (let row = 0; row < Len; row ++) {
+                let currentColor = color;
+                // 判断行
+                {
+                    let win = true;
+                    for(let col = 0; col < Len; col ++) {
+                        if (currentColor !== pattern[row][col]) {
+                            win = false;
+                            break;
+                        }
+                    }
+                    if (win) {
+                        winPosition('row', row);
+                        return currentColor;
+                    }
+                }
+                // 判断列
+                {
+                    let win = true;
+                    for(let col = 0; col < Len; col ++) {
+                        if (currentColor !== pattern[col][row]) {
+                            win = false;
+                            break;
+                        }
+                    }
+                    if (win) {
+                        winPosition('col', row);
+                        return currentColor;
+                    }
+                }
+            }
+
+            // 判断斜向；
+            {
+                let win = true;
+                let currentColor = color;
+                for (let row = 0; row < Len; row ++) {
+                    let col = row;
+                    if (currentColor !== pattern[row][col]) {
+                        win = false;
+                        break;
+                    }
+                }
+                if (win) {
+                    winPosition('left');
+                    return currentColor;
+                }
+            }
+            {
+                let win = true;
+                let col = 0;
+                let currentColor = color;
+                for (let row = Len - 1; row >= 0; row --, col ++) { 
+                    if (currentColor !== pattern[row][col]) {
+                        win = false;
+                        break;
+                    }
+                }
+                if (win) {
+                    winPosition('right');
+                    return currentColor;
+                }
+            }
+
+            return false;
+        }
+
+        function winPosition(orientation, num) {
+            if (num === undefined) {
+                console.log(`${orientation} route of win`);
+            } else {
+                console.log(`${orientation}-${num + 1} route of win`);
+            } 
+        }
+    </script>
+</body>
+</html>
