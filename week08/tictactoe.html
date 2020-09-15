@@ -64,17 +64,23 @@
             if (winner) return;
             pattern[y][x] = color;
             // 判断输赢
-            let win = isWin(pattern);
+            let win = isWin(pattern, color);
             if (win) {
                 console.log(`${win === 1 ? 'X' : 'O'} is Winner!`);
                 winner = win;
             };
             color = 3 - color;
             show(pattern);
+            if (willWin(pattern, color)) {
+                console.log(`${color === 1 ? 'X' : 'O'} is will win!`);
+            }
+            if (color === 2) {
+                computedPoint(pattern, color);
+            }
         }
         
         // 判断输赢的方法
-        function isWin(pattern) {
+        function isWin(pattern, color) {
             let Len = pattern.length;
             
             for (let row = 0; row < Len; row ++) {
@@ -88,10 +94,7 @@
                             break;
                         }
                     }
-                    if (win) {
-                        winPosition('row', row);
-                        return currentColor;
-                    }
+                    if (win) return currentColor;
                 }
                 // 判断列
                 {
@@ -102,10 +105,7 @@
                             break;
                         }
                     }
-                    if (win) {
-                        winPosition('col', row);
-                        return currentColor;
-                    }
+                    if (win) return currentColor;
                 }
             }
 
@@ -120,10 +120,7 @@
                         break;
                     }
                 }
-                if (win) {
-                    winPosition('left');
-                    return currentColor;
-                }
+                if (win) return currentColor;
             }
             {
                 let win = true;
@@ -135,21 +132,73 @@
                         break;
                     }
                 }
-                if (win) {
-                    winPosition('right');
-                    return currentColor;
-                }
+                if (win) return currentColor;
             }
 
             return false;
         }
 
-        function winPosition(orientation, num) {
-            if (num === undefined) {
-                console.log(`${orientation} route of win`);
-            } else {
-                console.log(`${orientation}-${num + 1} route of win`);
-            } 
+        function willWin(pattern, color) {
+            for (let i = 0, len = pattern.length; i < len; i ++) {
+                for (let j = 0; j < len; j ++) {
+                    if (pattern[i][j]) continue;
+                    let p = clone(pattern);
+                    p[i][j] = color;
+                    if (isWin(p, color)) return [j, i];
+                }
+            }
+            return null;
+        }
+
+        function clone(data) {
+            let newData = null;
+            if (typeof data !== 'object') return data;
+            if (data instanceof Array) {
+                newData = Array(data.length);
+                for (let i = 0; i< data.length; i ++) {
+                    let v = clone(data[i]);
+                    newData[i] = v;
+                }
+            }
+            return newData;
+        }
+
+        // 找出最佳落子点； 赢不了就和
+        function bestChoice(pattern, color) {
+            let p;
+            if (p = willWin(pattern, color)) {
+                return {
+                    point: p,
+                    result: 1
+                }
+            }
+            let result = -2;
+            let point = null;
+            for (let i = 0; i<3;i++){
+                for (let j=0;j<3;j++) {
+                    if (pattern[i][j]) continue;
+                    let pmt = clone(pattern);
+                    pmt[i][j] = color;
+                    let r = bestChoice(pmt, 3 - color).result;
+
+                    // -r,我方落子后，对方越好，这步棋就越差；
+                    if (-r > result) {
+                        result = -r;
+                        point = [j, i];
+                    }
+                }
+            }
+            return {
+                point: point,
+                result: point ? result : 0
+            }
+        }
+
+        // AI落子
+        function computedPoint(pattern, color) {
+            let r = bestChoice(pattern, color);
+            if (!r.point) return console.log('和棋!');
+            move(r.point[0], r.point[1], pattern);
         }
     </script>
 </body>
