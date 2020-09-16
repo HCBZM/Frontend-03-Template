@@ -5,187 +5,172 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
-        .cell {
+        .board {
+            width: 300px;
+        }
+        .board .cell {
             display: inline-block;
             width: 100px;
             height: 100px;
-            line-height: 100px;
-            border: 1px solid #000;
             font-size: 50px;
             font-weight: bold;
-            vertical-align: middle;
+            line-height: 100px;
             text-align: center;
+            vertical-align: middle;
+            border: 1px solid #000;
             margin-right: -1px;
             margin-bottom: -1px;
+            box-sizing: border-box;
         }
     </style>
 </head>
 <body>
     <div id="board" class="board"></div>
-
+    <div>
+        <button onclick="initial()">reset</button>
+    </div>
     <script>
         /*
-            棋盘3*3渲染；每点三个状态：null, X, O；
-            单机下子；每点只能下一次，判断输赢；
+            画出棋盘；三个状态；
+            交替落子；判断输赢；
+            AI策略；可以赢就赢 ， 否则找对对方最不利的点；
         */
-        let pattern = [
-            [0, 0, 0],
-            [0, 0, 0],
-            [0, 0, 0]
-        ];
+        function initial() {
+            window.pattern = [
+                0, 0, 0,
+                0, 0, 0,
+                0, 0, 0
+            ];
+            
+            window.color = 1;
+            window.winner = null;
+            show(pattern);
+        }
+        initial();
 
-        let color = 1;
-        let winner = '';
-
-        show(pattern);
-
-        // 渲染出棋盘；
+        // 画出棋盘的方法
         function show(pattern) {
             let board = document.getElementById('board');
-            board.innerHTML = '';
+
+            let range = new Range();
+            range.selectNodeContents(board);
+            range.deleteContents();
+
             let fragment = document.createDocumentFragment();
-            for (let i = 0, len = pattern.length; i < len; i ++) {
-                for (let j = 0; j < len; j ++) {
-                    let cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.textContent = pattern[i][j] === 0 ? '' : 
-                        pattern[i][j] === 1 ? 'X' : 'O';
-                    // 添加单机落子事件
-                    pattern[i][j] || cell.addEventListener('click', () => move(j, i, pattern));
-                    fragment.appendChild(cell);
-                }
-                fragment.appendChild(document.createElement('br'));
+            for (let i = 0; i < pattern.length; i ++) {
+                let cell = document.createElement('div');
+                let value = pattern[i];
+                cell.classList.add('cell');
+                cell.textContent = value === 1 ? 'X' : 
+                    value === 2 ? 'O' : '';
+                fragment.appendChild(cell);
+                
+                value || cell.addEventListener('click', () => move(pattern, i));
             }
             board.appendChild(fragment);
         }
 
-        // 单机落子的事件
-        function move(x, y, pattern) {
+        // 交替落子 判断输赢，
+        function move(pattern, point) {
+            pattern[point] = color;
             if (winner) return;
-            pattern[y][x] = color;
-            // 判断输赢
-            let win = isWin(pattern, color);
-            if (win) {
-                console.log(`${win === 1 ? 'X' : 'O'} is Winner!`);
+            let win;
+            if (win = isWin(pattern, color)) {
+                console.log(`${win === 1 ? 'X' : 'O'} is winner!`);
                 winner = win;
-            };
+            }
             color = 3 - color;
             show(pattern);
-            if (willWin(pattern, color)) {
-                console.log(`${color === 1 ? 'X' : 'O'} is will win!`);
-            }
-            if (color === 2) {
-                computedPoint(pattern, color);
+            if (color === 2 && !winner) {
+                computedMove(pattern, color);
             }
         }
-        
+
         // 判断输赢的方法
         function isWin(pattern, color) {
-            let Len = pattern.length;
-            
-            for (let row = 0; row < Len; row ++) {
-                let currentColor = color;
-                // 判断行
+            for (let i = 0; i < 3; i ++) {
+                // 横向判断
                 {
                     let win = true;
-                    for(let col = 0; col < Len; col ++) {
-                        if (currentColor !== pattern[row][col]) {
+                    for (let j = 0; j < 3; j ++) {
+                        if (color !== pattern[i * 3 + j]) {
                             win = false;
                             break;
                         }
                     }
-                    if (win) return currentColor;
+                    if (win) return color;
                 }
-                // 判断列
+                // 纵向向判断
                 {
                     let win = true;
-                    for(let col = 0; col < Len; col ++) {
-                        if (currentColor !== pattern[col][row]) {
+                    for (let j = 0; j < 3; j ++) {
+                        if (color !== pattern[j * 3 + i]) {
                             win = false;
                             break;
                         }
                     }
-                    if (win) return currentColor;
-                }
+                    if (win) return color;
+                } 
             }
-
-            // 判断斜向；
+            // 斜向 
             {
                 let win = true;
-                let currentColor = color;
-                for (let row = 0; row < Len; row ++) {
-                    let col = row;
-                    if (currentColor !== pattern[row][col]) {
+                for (let i = 0; i < 3; i ++) {
+                    if (color !== pattern[i*3 + i]) {
                         win = false;
                         break;
                     }
                 }
-                if (win) return currentColor;
+                if (win) return color;
             }
             {
                 let win = true;
-                let col = 0;
-                let currentColor = color;
-                for (let row = Len - 1; row >= 0; row --, col ++) { 
-                    if (currentColor !== pattern[row][col]) {
+                for (let i = 0; i < 3; i ++) {
+                    if (color !== pattern[(i + 1)*3 - i - 1]) {
                         win = false;
                         break;
                     }
                 }
-                if (win) return currentColor;
+                if (win) return color;
             }
-
-            return false;
+            return null;
         }
 
+        // 判断将要赢的方法
         function willWin(pattern, color) {
-            for (let i = 0, len = pattern.length; i < len; i ++) {
-                for (let j = 0; j < len; j ++) {
-                    if (pattern[i][j]) continue;
-                    let p = clone(pattern);
-                    p[i][j] = color;
-                    if (isWin(p, color)) return [j, i];
-                }
+            for (let i = 0; i < pattern.length; i++) {
+                if (pattern[i]) continue;
+                let p = clone(pattern);
+                p[i] = color;
+                if (isWin(p, color)) return i;
             }
             return null;
         }
 
         function clone(data) {
-            let newData = null;
-            if (typeof data !== 'object') return data;
-            if (data instanceof Array) {
-                newData = Array(data.length);
-                for (let i = 0; i< data.length; i ++) {
-                    let v = clone(data[i]);
-                    newData[i] = v;
-                }
-            }
-            return newData;
+            return Object.create(data);
         }
 
-        // 找出最佳落子点； 赢不了就和
+        // 计算最佳落子点
         function bestChoice(pattern, color) {
-            let p;
-            if (p = willWin(pattern, color)) {
+            let point = willWin(pattern, color);
+            if (point !== null) {
                 return {
-                    point: p,
+                    point: point,
                     result: 1
                 }
             }
             let result = -2;
-            let point = null;
-            for (let i = 0; i<3;i++){
-                for (let j=0;j<3;j++) {
-                    if (pattern[i][j]) continue;
-                    let pmt = clone(pattern);
-                    pmt[i][j] = color;
-                    let r = bestChoice(pmt, 3 - color).result;
-
-                    // -r,我方落子后，对方越好，这步棋就越差；
-                    if (-r > result) {
-                        result = -r;
-                        point = [j, i];
-                    }
+            // 尝试每个可落子点
+            for (let i = 0; i < pattern.length; i ++) {
+                if (pattern[i]) continue;
+                let p = clone(pattern);
+                p[i] = color;
+                let r = bestChoice(p, 3 - color).result;
+                // -r 落子后，越对对方有利，这一步就越差，越置后选择
+                if (-r > result) {
+                    result = -r;
+                    point = i;
                 }
             }
             return {
@@ -195,10 +180,11 @@
         }
 
         // AI落子
-        function computedPoint(pattern, color) {
-            let r = bestChoice(pattern, color);
-            if (!r.point) return console.log('和棋!');
-            move(r.point[0], r.point[1], pattern);
+        function computedMove(pattern, color) {
+            let res = bestChoice(pattern, color);
+            console.log(res);
+            if (res.point === null) return console.log('和棋！');
+            move(pattern, res.point);
         }
     </script>
 </body>
