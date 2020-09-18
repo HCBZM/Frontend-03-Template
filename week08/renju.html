@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>renju</title>
+    <style>
+        .board {
+            width: 625px;
+            margin: 0 auto;
+            border-right: 1px solid var(--line, #000);
+            border-bottom: 1px solid var(--line);
+            background-color: peru;
+            --line: #222;
+            --black: radial-gradient(#666, #222 45%, #000);
+            --white: radial-gradient(#fff, #ddd 45%, #aaa);
+            font-size: 0;
+        }
+        .board .cell {
+            display: inline-block;
+            position: relative;
+            width: 25px;
+            height: 25px;
+            line-height: 25px;
+            text-align: center;
+            vertical-align: middle;
+            border-top: 1px solid var(--line);
+            border-left: 1px solid var(--line);
+            box-sizing: border-box;
+        }
+        .board .cell::before {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            content: attr(position);
+            font-size: 12px;
+            opacity: 0.2;
+        }
+        .board .black::after {
+            position: absolute;
+            display: block;
+            content: '';
+            width: 80%;
+            height: 80%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: var(--black);
+            box-shadow: 1px 2px 5px #222;
+        }
+        .board .white::after {
+            position: absolute;
+            display: block;
+            content: '';
+            width: 80%;
+            height: 80%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: var(--white);
+            box-shadow: 1px 2px 5px #222;
+        }
+        .board .highlight {
+            background-color: red;
+            box-shadow: 0 0 10px 2px red;
+        }
+    </style>
+</head>
+<body>
+    <div id="board" class="board"></div>
+    <script>
+
+        /*
+            生成棋盘, 交替落子, 判断胜负，突出显示胜者
+            策略：可以赢
+                成四字
+                成三子
+
+        */
+        
+        // 定义全局变量
+        let pattern;
+        let color;
+        let winner;
+        let boardLen;
+
+        initialize(25);
+        // 初始化
+        function initialize(len) {
+            boardLen = len;
+            pattern = Array(len * len);
+            color = 1;
+            winner = null;
+
+            show(pattern);
+        }
+
+        // 画出棋盘
+        function show(pattern) {
+            let board = document.getElementById('board');
+            let range = new Range;
+            range.selectNodeContents(board);
+            range.deleteContents();
+            let fragment = document.createDocumentFragment();
+            for (let i = 0; i < pattern.length; i ++) {
+                let cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.setAttribute('position', i);
+                fragment.appendChild(cell);
+
+                pattern[i] || cell.addEventListener('click', () => move(pattern, i), {once: true});
+            }
+            board.appendChild(fragment);
+        }
+
+        function changeShow(pattern, point) {
+            let board = document.getElementById('board');
+            cell = Array.from(board.children)[point];
+            pattern[point] === 1 
+                ? cell.classList.add('black') 
+                : cell.classList.add('white');
+        }
+
+        // 交替落子
+        function move(pattern, point) {
+            pattern[point] = color;
+
+            if (winner) return;
+            let win = isWin(pattern, color);
+            if (win) {
+                console.log(win === 1 ? 'black' : 'white', 'is win!');
+                winner = win;
+            }
+            
+            color = 3 - color;
+            changeShow(pattern, point);
+        }
+
+
+        // 判断胜负的方法
+        function isWin(pattern, color) {
+            // 
+            let just = (point, step) => {
+                if (pattern[point] === color) {
+                    step.push(point);
+                    if (step.length === 5) {
+                        showWinHighlight(step);
+                        return true;
+                    };
+                } else step.splice(0, step.length);
+                return false;
+            }
+            
+            for (let i = 0; i < boardLen; i ++) {
+                // 横、纵向判断
+                {
+                    let step1 = [];
+                    let step2 = [];
+                    for (let j = 0; j < boardLen; j ++) {
+                        // 横线点
+                        let point1 = boardLen * i + j;
+                        // 纵线点
+                        let point2 = boardLen * j + i;
+                        if (just(point1, step1)) return color;
+                        if (just(point2, step2)) return color;
+                    }
+                }
+
+                // 斜向判断
+                let x = boardLen - i;
+                if (x > 4) {
+                    let step1 = [];
+                    let step2 = [];
+                    let step3 = [];
+                    let step4 = [];
+
+                    for (let j = 0; j < x; j ++) {
+                        // 上左、上右部分
+                        let point2 = (x - 1) + (j*boardLen - j);
+                        let point1 = i + (j*boardLen + j);
+                        // 下左、下右部分
+                        let point3 = i*boardLen + (j*boardLen + j);
+                        let point4 = ((i + 1)*boardLen - 1) + (j*boardLen - j);
+
+                        if (just(point1, step1)) return color;
+                        if (just(point2, step2)) return color;
+
+                        if (i > 0) {
+                            if (just(point3, step3)) return color;
+                            if (just(point4, step4)) return color;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        //  突出显示赢的点
+        function showWinHighlight(points) {
+            let board = document.getElementById('board');
+            let cells = Array.from(board.children);
+            for (let p of points) {
+                cells[p].classList.add('highlight');
+            }
+        } 
+    </script>
+</body>
+</html>
