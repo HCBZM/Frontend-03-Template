@@ -6,7 +6,7 @@
     <title>renju</title>
     <style>
         .board {
-            width: 625px;
+            width: 525px;
             margin: 0 auto;
             border-right: 1px solid var(--line, #000);
             border-bottom: 1px solid var(--line);
@@ -19,9 +19,9 @@
         .board .cell {
             display: inline-block;
             position: relative;
-            width: 25px;
-            height: 25px;
-            line-height: 25px;
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
             text-align: center;
             vertical-align: middle;
             border-top: 1px solid var(--line);
@@ -86,12 +86,15 @@
         let color;
         let winner;
         let boardLen;
+        let minX,minY,maxX,maxY;
+        let historySteps = [];
+        let canWin = false;
 
-        initialize(25);
+        initialize(15);
         // 初始化
         function initialize(len) {
             boardLen = len;
-            pattern = Array(len * len);
+            pattern = Array(len * len).fill(0);
             color = 1;
             winner = null;
 
@@ -127,30 +130,69 @@
         // 交替落子
         function move(pattern, point) {
             pattern[point] = color;
-
             if (winner) return;
-            let win = isWin(pattern, color);
-            if (win) {
-                console.log(win === 1 ? 'black' : 'white', 'is win!');
-                winner = win;
-            }
-            
-            color = 3 - color;
+
+            historySteps.push(point);
+            updateRange(point);
+            // console.log(minX,minY,maxX,maxY);
+
             changeShow(pattern, point);
+            let win = isWin(pattern, color, point);
+            if (win) {
+                showWinHighlight(win);
+                winner = color === 1 ? 'black' : 'white';
+                console.log(winner, 'is win!');
+                return;
+            }
+
+            color = 3 - color;
+            let stepsLen = historySteps.length;
+
+            // 落子
+            if (stepsLen > 2) {
+                console.log(willWin(pattern, historySteps[stepsLen - 2]));
+                console.log()
+            } else {
+                // bestChoice(pattern, color);
+            }
         }
 
-
         // 判断胜负的方法
-        function isWin(pattern, color) {
-            // 
-            let just = (point, step) => {
+        function isWin(pattern, color, point) {
+            return renjuFilter(pattern, color, point, 5);
+        }
+
+        // 连珠加个过滤，可能存在5连滤出；按四连算，前或后可落子；
+        // function renjuFilter(pattern, steps) {
+        //     let dif = steps[1] - steps[0];
+        //     let len = steps.length; 
+        //     // 根据两个旗子间的差值，找到一线的其他子
+        //     if (len === 4) {
+        //         let a = steps[0] - dif;
+        //         let b = steps[len - 1] + dif;
+        //         if (pattern[a] === 0 && pattern[b] === 0) {
+        //             return true;
+        //         }
+        //     }
+        //     return false;
+        // }
+
+        // 全盘搜索; 返回连珠 5连直接返回，其他则返回所有符合条件的连珠
+        function renju(pattern, color, limit) {
+            const allRenju = [];
+
+            let just = (point, steps) => {
                 if (pattern[point] === color) {
-                    step.push(point);
-                    if (step.length === 5) {
-                        showWinHighlight(step);
-                        return true;
-                    };
-                } else step.splice(0, step.length);
+                    steps.push(point);
+                    // 5连
+                    if (limit === 5 && steps.length === limit) return true;
+                    // 其他情况
+                    if (steps.length === limit) {
+                        if (renjuFilter(pattern, steps))
+                            allRenju.push(steps.concat());
+                        steps.splice(0, steps.length);
+                    }
+                } else steps.splice(0, steps.length);
                 return false;
             }
             
@@ -164,8 +206,8 @@
                         let point1 = boardLen * i + j;
                         // 纵线点
                         let point2 = boardLen * j + i;
-                        if (just(point1, step1)) return color;
-                        if (just(point2, step2)) return color;
+                        if (just(point1, step1)) return step1;
+                        if (just(point2, step2)) return step2;
                     }
                 }
 
@@ -185,14 +227,118 @@
                         let point3 = i*boardLen + (j*boardLen + j);
                         let point4 = ((i + 1)*boardLen - 1) + (j*boardLen - j);
 
-                        if (just(point1, step1)) return color;
-                        if (just(point2, step2)) return color;
+                        if (just(point1, step1)) return step1;
+                        if (just(point2, step2)) return step2;
 
                         if (i > 0) {
-                            if (just(point3, step3)) return color;
-                            if (just(point4, step4)) return color;
+                            if (just(point3, step3)) return step3;
+                            if (just(point4, step4)) return step4;
                         }
                     }
+                }
+            }
+            if (limit === 5) return false;
+            return allRenju;
+        }
+
+        // 按落子点搜索； 返回落子点的4条（横、纵、正斜、反斜）连珠线 
+        function pointRenju(pattern, point) {
+            let all = [];
+            let len = boardLen;
+            point = point + 1;
+            // 横
+            {
+                let arr = [];
+                let next = (Math.ceil(point / len) - 1)*len + 1;
+                while (true) {
+                    arr.push(next - 1);
+                    next ++;
+                    if (next % len === 1) break;
+                }
+                all.push(arr);
+            }
+            // 纵
+            {
+                let arr = [];
+                let next = point % len || len;
+                while (true) {
+                    arr.push(next - 1);
+                    next = next + len;
+                    if (next > len * len) break;
+                }
+                all.push(arr);
+            }
+            // 正斜
+            {
+                let arr = [];
+                let y = Math.ceil(point / len) || len;
+                let x = point % len || len;
+                let next;
+                if (y > x) {
+                    next = (y - x)*len + 1;
+                } else {
+                    next = point - (y-1)*len - (y - 1);
+                }
+                while (true) {
+                    if (next > len*len) break;
+                    if (next % len === 0) {
+                        arr.push(next - 1);
+                        break;
+                    }
+                    arr.push(next - 1);
+                    next = next + len + 1;
+                }
+                all.push(arr);
+            }
+            // 反斜 
+            {
+                let arr = [];
+                let y = Math.ceil(point / len) || len;
+                let x = point % len || len;
+                let next;
+                if ((len - x) < y) {
+                    next = (y -(len - x))*len;
+                } else {
+                    next = point - (y-1)*len + (y - 1);
+                }
+                while (true) {
+                    if (next > len*len) break;
+                    if (next % len === 1) {
+                        arr.push(next - 1);
+                        break;
+                    }
+                    arr.push(next - 1);
+                    next = next + len - 1;
+                }
+                all.push(arr);
+            }
+            return all;
+        }
+
+        // 返回符合条件的连珠 array: [[]]
+        function renjuFilter(pattern, color, point, limit) {
+            let points = pointRenju(pattern, point);
+            let renjus = points.filter(v => v.length >= limit);
+            // 装换为字符串，好比对是否可以赢；
+            let strs = renjus.map(v => v.map(p => pattern[p]).join(''));
+            // 可以赢的数组
+            let wins = [];
+            if (limit === 5) {
+                wins.push(`${color}${color}${color}${color}${color}`);
+            } else if (limit === 4) {
+                wins.push(`0${color}${color}${color}${color}0`);
+            } else if (limit === 3) {
+
+            }
+            for (let i = 0; i < strs.length; i++) {
+                let position;
+                let str = strs[i];
+                let res = wins.some(v => {
+                    position = str.indexOf(v);
+                    return position !== -1;
+                });
+                if (res) {
+                    return renjus[i].slice(position, position + limit);
                 }
             }
             return false;
@@ -206,6 +352,121 @@
                 cells[p].classList.add('highlight');
             }
         } 
+
+        // 计算出最佳落子点 
+        // function bestChoice(pattern, color) {
+        //     let point = null;
+        //     let result = -5;
+        //     // 计算范围
+        //     range = computedRange(3);
+
+        //     for (let i = range.minY; i < range.maxY; i ++) {
+        //         for (let j = range.minX; j < range.maxX; j ++) {
+        //             let p = i * boardLen + j;
+        //             if (pattern[p]) continue;
+        //             let tmp = clone(pattern);
+        //             tmp[p] = color;
+        //             let r;
+        //             if (willWin(tmp, point)) {
+        //                 r = {
+        //                     point,
+        //                     result: 1
+        //                 }
+        //             } else {
+        //                 r = bestChoice(tmp, 3 - color);
+        //             }
+        //             if (-r > result) {
+        //                 result = -r;
+        //                 point = i;
+        //             }
+        //         }
+        //     }
+        //     return {
+        //         point,
+        //         result: point ? result : 0
+        //     }
+        // }
+
+        // 可以赢   三子两边没堵，四字没堵；
+        function willWin(pattern, point) {
+            let color = pattern[point];
+            // 算出可获胜范围
+            let range = computedRange(1);
+            // 找获胜点
+            for (let i = range.minYy; i <= range.maxYy; i ++) {
+                for (let j = range.minXx; j <= range.maxXx; j ++) {
+                    let p = i * boardLen + j;
+                    let point = pattern[p];
+                    if (point) continue;
+                    let pmt = clone(pattern);
+                    pmt[p] = color;
+                    // 四子直接赢
+                    if (isWin(pmt, color, p)) return p;
+                }
+            }
+            for (let i = range.minYy; i <= range.maxYy; i ++) {
+                for (let j = range.minXx; j <= range.maxXx; j ++) {
+                    let p = i * boardLen + j;
+                    let point = pattern[p];
+                    if (point) continue;
+                    let pmt = clone(pattern);
+                    pmt[p] = color;
+                    // 三子赢
+                    if (wantToWin(pmt, color, p)) {
+                        return p;
+                    }
+                }
+            }
+            return null;
+        }   
+
+        // 三子赢
+        function wantToWin(pattern, color, point) {
+            let steps = renjuFilter(pattern, color, point, 4);
+            if (steps) return true;
+            return false;
+        }
+
+        // 更新 minX,minY,maxX,maxY 用于计算范围；
+        function updateRange(point) {
+            let x, y;
+            x = point % boardLen;
+            y = Math.floor(point / boardLen);
+            if (minX) minX = Math.min(x, minX);
+            else minX = x;
+            
+            if (minY) minY = Math.min(y, minY);
+            else minY = y;
+
+            if (maxX) maxX = Math.max(x, maxX);
+            else maxX = x;
+
+            if (maxY) maxY = Math.max(y, maxY);
+            else maxY = y;
+        }
+
+        // 计算范围
+        function computedRange(range) {
+            let minXx = minX - range;
+            let minYy = minY - range;
+            let maxXx = maxX + range;
+            let maxYy = maxY + range;
+            minXx = minXx < 0 ? 0 : minXx;
+            minYy = minYy < 0 ? 0 : minYy;
+            maxXx = maxXx > boardLen ? boardLen : maxXx;
+            maxYy = maxYy > boardLen ? boardLen : maxYy;
+            return {
+                minXx,
+                minYy,
+                maxXx,
+                maxYy
+            }
+        }
+
+
+        function clone(data) {
+            return Object.create(data);
+        }
     </script>
 </body>
 </html>

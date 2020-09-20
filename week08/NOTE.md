@@ -1,1 +1,1 @@
-学习笔记
+学习笔记https://www.yuque.com/docs/share/6aa5f93e-42e3-40b6-9676-e7d31b949710?# 《异步编程Promise》
