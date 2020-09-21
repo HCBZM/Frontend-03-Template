@@ -151,9 +151,9 @@
             // 落子
             if (stepsLen > 2) {
                 console.log(willWin(pattern, historySteps[stepsLen - 2]));
-                console.log()
+                // console.log(bestChoice(pattern, color));
             } else {
-                // bestChoice(pattern, color);
+                
             }
         }
 
@@ -318,7 +318,7 @@
         // 返回符合条件的连珠 array: [[]]
         function renjuFilter(pattern, color, point, limit) {
             let points = pointRenju(pattern, point);
-            let renjus = points.filter(v => v.length >= limit);
+            let renjus = points.filter(v => v.length >= 5);
             // 装换为字符串，好比对是否可以赢；
             let strs = renjus.map(v => v.map(p => pattern[p]).join(''));
             // 可以赢的数组
@@ -328,8 +328,13 @@
             } else if (limit === 4) {
                 wins.push(`0${color}${color}${color}${color}0`);
             } else if (limit === 3) {
-
+                wins.push(`0${color}${color}${color}00`);
+                wins.push(`00${color}${color}${color}0`);
+                wins.push(`0${color}${color}${color}${color}`);
+                wins.push(`${color}${color}${color}${color}0`);
             }
+
+            let result = [];
             for (let i = 0; i < strs.length; i++) {
                 let position;
                 let str = strs[i];
@@ -337,10 +342,14 @@
                     position = str.indexOf(v);
                     return position !== -1;
                 });
-                if (res) {
+                if (res && limit === 3) {
+                    result.push(renjus[i].slice(position, position + limit));
+                } else if (res) {
                     return renjus[i].slice(position, position + limit);
                 }
             }
+
+            if (result.length) return result;
             return false;
         }
 
@@ -390,6 +399,7 @@
         // 可以赢   三子两边没堵，四字没堵；
         function willWin(pattern, point) {
             let color = pattern[point];
+            let canwin = [];
             // 算出可获胜范围
             let range = computedRange(1);
             // 找获胜点
@@ -400,30 +410,26 @@
                     if (point) continue;
                     let pmt = clone(pattern);
                     pmt[p] = color;
-                    // 四子直接赢
+                    // 五子直接赢
                     if (isWin(pmt, color, p)) return p;
-                }
-            }
-            for (let i = range.minYy; i <= range.maxYy; i ++) {
-                for (let j = range.minXx; j <= range.maxXx; j ++) {
-                    let p = i * boardLen + j;
-                    let point = pattern[p];
-                    if (point) continue;
-                    let pmt = clone(pattern);
-                    pmt[p] = color;
-                    // 三子赢
                     if (wantToWin(pmt, color, p)) {
-                        return p;
+                        canwin.push(p);
                     }
                 }
             }
+            if (canwin.length) return canwin[0];
             return null;
         }   
 
-        // 三子赢
+        // 可以赢
         function wantToWin(pattern, color, point) {
+            // 四子赢
             let steps = renjuFilter(pattern, color, point, 4);
             if (steps) return true;
+            // 三子赢 同时成两条将赢
+            steps = renjuFilter(pattern, color, point, 3);
+            if (steps.length > 1) return true;
+
             return false;
         }
 
