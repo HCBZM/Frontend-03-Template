@@ -150,16 +150,11 @@
 
             // 落子
             if (stepsLen > 2) {
-                console.log(willWin(pattern, historySteps[stepsLen - 2]));
-                // console.log(bestChoice(pattern, color));
+                //console.log(willWin(pattern, historySteps[stepsLen - 2]));
+                console.log(bestChoice(pattern, color));
             } else {
                 
             }
-        }
-
-        // 判断胜负的方法
-        function isWin(pattern, color, point) {
-            return renjuFilter(pattern, color, point, 5);
         }
 
         // 连珠加个过滤，可能存在5连滤出；按四连算，前或后可落子；
@@ -328,10 +323,15 @@
             } else if (limit === 4) {
                 wins.push(`0${color}${color}${color}${color}0`);
             } else if (limit === 3) {
-                wins.push(`0${color}${color}${color}00`);
-                wins.push(`00${color}${color}${color}0`);
+                wins.push(`0${color}${color}${color}0`);
+                wins.push(`0${color}${color}${color}0`);
                 wins.push(`0${color}${color}${color}${color}`);
                 wins.push(`${color}${color}${color}${color}0`);
+            } else if (limit === 2) {
+                wins.push(`${color}${color}${color}${color}0`);
+                wins.push(`0${color}${color}${color}${color}`);
+                wins.push(`0${color}${color}00`);
+                wins.push(`00${color}${color}0`);
             }
 
             let result = [];
@@ -363,43 +363,66 @@
         } 
 
         // 计算出最佳落子点 
-        // function bestChoice(pattern, color) {
-        //     let point = null;
-        //     let result = -5;
-        //     // 计算范围
-        //     range = computedRange(3);
+        function bestChoice(pattern, color, deepl) {
+            let point = null;
+            let result = -5;
+            // 计算范围
+            range = computedRange(1);
 
-        //     for (let i = range.minY; i < range.maxY; i ++) {
-        //         for (let j = range.minX; j < range.maxX; j ++) {
-        //             let p = i * boardLen + j;
-        //             if (pattern[p]) continue;
-        //             let tmp = clone(pattern);
-        //             tmp[p] = color;
-        //             let r;
-        //             if (willWin(tmp, point)) {
-        //                 r = {
-        //                     point,
-        //                     result: 1
-        //                 }
-        //             } else {
-        //                 r = bestChoice(tmp, 3 - color);
-        //             }
-        //             if (-r > result) {
-        //                 result = -r;
-        //                 point = i;
-        //             }
-        //         }
-        //     }
-        //     return {
-        //         point,
-        //         result: point ? result : 0
-        //     }
-        // }
+            deepl = deepl || 0;
+            deepl ++;
+            if (deepl > 3) {
+                return {
+                    result
+                }
+            }
 
-        // 可以赢   三子两边没堵，四字没堵；
+            for (let i = range.minYy; i < range.maxYy; i ++) {
+                for (let j = range.minXx; j < range.maxXx; j ++) {
+                    let p = i * boardLen + j;
+                    if (pattern[p]) continue;
+                    let tmp = clone(pattern);
+                    tmp[p] = color;
+                    if (willWin(tmp, p)) {
+                        return {
+                            point: p,
+                            result: 1
+                        }
+                    }
+                    // if (isWin(tmp, color, p)) {
+                    //     return {
+                    //         point: p,
+                    //         result: 1
+                    //     }
+                    // } else if (fourWin(tmp, color, p)) {
+                    //     return {
+                    //         point: p,
+                    //         result: 2
+                    //     }
+                    // } else if (threeWin(tmp, color, p)) {
+                    //     return {
+                    //         point: p,
+                    //         result: 3
+                    //     }
+                    // }
+                    let r = bestChoice(tmp, 3 - color, deepl).result;
+                    if (-r > result) {
+                        result = -r;
+                        point = p;
+                    }
+                }
+            }
+            return {
+                point,
+                result: point ? result : 0
+            }
+        }
+
+        // 可以赢  
         function willWin(pattern, point) {
             let color = pattern[point];
-            let canwin = [];
+            let canfourWin = null;
+            let canthreeWin = null;
             // 算出可获胜范围
             let range = computedRange(1);
             // 找获胜点
@@ -412,24 +435,40 @@
                     pmt[p] = color;
                     // 五子直接赢
                     if (isWin(pmt, color, p)) return p;
-                    if (wantToWin(pmt, color, p)) {
-                        canwin.push(p);
-                    }
+                    if (canfourWin === null && fourWin(pmt, color, p)) 
+                        canfourWin = p;
+                    if (canthreeWin === null && threeWin(pmt, color, p)) 
+                        canthreeWin = p;
                 }
             }
-            if (canwin.length) return canwin[0];
+            if (canfourWin !== null) return canfourWin;
+            if (canthreeWin !== null) return canthreeWin;
             return null;
         }   
 
-        // 可以赢
-        function wantToWin(pattern, color, point) {
-            // 四子赢
+        // 五子赢
+        function isWin(pattern, color, point) {
+            return renjuFilter(pattern, color, point, 5);
+        }
+
+        // 四子赢
+        function fourWin(pattern, color, point) {
             let steps = renjuFilter(pattern, color, point, 4);
             if (steps) return true;
-            // 三子赢 同时成两条将赢
+            return false;
+        }
+
+        // 三子赢 
+        function threeWin(pattern, color, point) {
             steps = renjuFilter(pattern, color, point, 3);
             if (steps.length > 1) return true;
+            return false;
+        }
 
+        // 走两子
+        function twoWin(pattern, color, point) {
+            let steps = renjuFilter(pattern, color, point, 2);
+            if (steps) return true;
             return false;
         }
 
