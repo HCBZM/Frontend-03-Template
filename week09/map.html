@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .container {
+            width: 600px;
+            font-size: 0;
+            user-select: none;
+        }
+        .container .cell {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-right: 1px solid #fff;
+            border-bottom: 1px solid #fff;
+            background-color: #999;
+        }
+        .container .fill {
+            background-color: #222;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="container"></div>
+    <button id="save">save</button>
+    <script>
+        const map = localStorage.getItem('map') && JSON.parse(localStorage.getItem('map')) || Array(100*100).fill(0);
+        
+        show()
+        function show() {
+            let container = document.getElementById('container');
+            let fragment = document.createDocumentFragment();
+            for (let i = 0; i < map.length; i ++) {
+                let cell = document.createElement('div');
+                cell.classList.add('cell');
+                map[i] === 1 && cell.classList.add('fill');
+                cell.setAttribute('key', i);
+                fragment.appendChild(cell);
+            }
+            container.appendChild(fragment);
+            // 注册事件
+            drawEvent();
+        }
+
+        function drawEvent() {
+            let mouseDown = false;
+            let clear = false;
+            let container = document.getElementById('container');
+
+            // 画图事件
+            container.addEventListener('mousedown', e => {
+                mouseDown = true;
+                if (e.button === 2) clear = true; 
+            })
+            container.addEventListener('contextmenu', e => e.preventDefault());
+            container.addEventListener('mousemove', e => {
+                if (!mouseDown) return;
+                let target = e.target;
+                let classList = target.classList;
+                if (!classList.contains('cell')) return;
+                let isFill = classList.contains('fill');
+                let key = target.getAttribute('key');
+                if (clear && isFill) {
+                    classList.remove('fill');
+                    map[key] = 0;
+                }
+                if (!clear && !isFill) {
+                    classList.add('fill');
+                    map[key] = 1;
+                }
+            })
+            container.addEventListener('mouseup', () => {
+                mouseDown = false;
+                clear = false;
+            });        
+
+            // 保存地图
+            let save = document.getElementById('save');
+            save.addEventListener('click', e => {
+                localStorage.setItem('map', JSON.stringify(map));
+            })
+        }
+    </script>
+</body>
+</html>
