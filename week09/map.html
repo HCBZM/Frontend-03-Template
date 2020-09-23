@@ -85,52 +85,59 @@
         }
 
 
-        let container = document.getElementById('container');
-        let cells = Array.from(container.children);
-        // 搜索路径
-        // path(map, [5,5], [8,9]) path(map, [5,5], [8,9], true)
-        async function path(map, start, end, a) {
-            {
-                let [x, y] = start;
-                let point = x + y*100;
-                cells[point].style.boxShadow = '0 0 2px 3px blue inset';
-                [x, y] = end;
-                point = x + y*100;
-                cells[point].style.boxShadow = '0 0 2px 3px red inset';
-            }
+        // 寻路
+        async function path(map, start, end) {
+            const queue = [start];
+            let table = clone(map);
 
-            let queue = [start];
-            
-            let insert = (x, y) => {
+            let container = document.getElementById('container');
+            let cells = Array.from(container.children);
+            let [x, y] = end;
+            cells[x + y*100].style.boxShadow = '0 0 2px 2px red inset';
+
+            let insert = (x, y, pre) => {
+                if (x < 0 || x >= 100 || y < 0 || y >= 100) return;
                 let point = x + y*100;
-                if (x < 0 || x > 99 || y < 0 || y > 99) return;
-                if (map[point]) return;
-                map[point] = 2;
+                if (table[point]) return;
+                table[point] = pre;
                 queue.push([x, y]);
             }
 
-            while (true) {
-                let x, y;
-                if (a) {
-                    [x, y] = queue.pop();
-                } else {
-                    [x, y] = queue.shift();
-                }
-                // console.log(x, y);
-                viewPoint(x, y);
-                await new Promise(res => setTimeout(res,10));
-                if (x === end[0] && y === end[1]) return true;
-                insert(x - 1, y);
-                insert(x + 1, y);
-                insert(x, y - 1);
-                insert(x, y + 1);
-            }    
+            while (queue.length) {
+                let [x, y] = queue.shift();
+                // 可视化
+                cells[x + y*100].style.backgroundColor = 'lightgreen';
+                // await sleep(0);
+
+                if (x === end[0] && y === end[1]) {
+                    let way = [x + y*100];
+                    while(x !== start[0] || y !== start[1]) {
+                        [x, y] = table[x + y*100];
+                        way.push(x + y*100);
+                        cells[x + y*100].style.backgroundColor = 'orangered';
+                        await sleep(0);
+                    }
+                    return way;
+                };
+                insert(x - 1, y, [x, y]);
+                insert(x + 1, y, [x, y]);
+                insert(x, y - 1, [x, y]);
+                insert(x, y + 1, [x, y]);
+
+                insert(x-1, y-1, [x, y]);
+                insert(x+1, y-1, [x, y]);
+                insert(x-1, y+1, [x, y]);
+                insert(x+1, y+1, [x, y]);
+            }
+            return null;
         }
 
-        
-        function viewPoint(x, y) {
-            let point = x + y*100;
-            cells[point].style.backgroundColor = 'green';
+        function sleep(time) {
+            return new Promise(res => setTimeout(res, time));
+        }
+
+        function clone(data) {
+            return Object.create(data);
         }
     </script>
 </body>
