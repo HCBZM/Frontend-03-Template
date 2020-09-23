@@ -83,6 +83,55 @@
                 localStorage.setItem('map', JSON.stringify(map));
             })
         }
+
+
+        let container = document.getElementById('container');
+        let cells = Array.from(container.children);
+        // 搜索路径
+        // path(map, [5,5], [8,9]) path(map, [5,5], [8,9], true)
+        async function path(map, start, end, a) {
+            {
+                let [x, y] = start;
+                let point = x + y*100;
+                cells[point].style.boxShadow = '0 0 2px 3px blue inset';
+                [x, y] = end;
+                point = x + y*100;
+                cells[point].style.boxShadow = '0 0 2px 3px red inset';
+            }
+
+            let queue = [start];
+            
+            let insert = (x, y) => {
+                let point = x + y*100;
+                if (x < 0 || x > 99 || y < 0 || y > 99) return;
+                if (map[point]) return;
+                map[point] = 2;
+                queue.push([x, y]);
+            }
+
+            while (true) {
+                let x, y;
+                if (a) {
+                    [x, y] = queue.pop();
+                } else {
+                    [x, y] = queue.shift();
+                }
+                // console.log(x, y);
+                viewPoint(x, y);
+                await new Promise(res => setTimeout(res,10));
+                if (x === end[0] && y === end[1]) return true;
+                insert(x - 1, y);
+                insert(x + 1, y);
+                insert(x, y - 1);
+                insert(x, y + 1);
+            }    
+        }
+
+        
+        function viewPoint(x, y) {
+            let point = x + y*100;
+            cells[point].style.backgroundColor = 'green';
+        }
     </script>
 </body>
 </html>
