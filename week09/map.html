@@ -26,7 +26,36 @@
 <body>
     <div class="container" id="container"></div>
     <button id="save">save</button>
+    <script src="./binary-heap.js"></script>
     <script>
+        class sorted {
+            constructor (data, compare) {
+                this.data = data.slice();
+                this.compare = compare || ((a, b) => a - b);
+            }
+
+            take () {
+                if (this.data.length === 0) return;
+                let minIndex = 0;
+                let min = this.data[0];
+                for (let i = 1; i < this.data.length; i ++) {
+                    if (this.compare(min, this.data[i]) > 0) {
+                        min = this.data[i];
+                        minIndex = i;
+                    }
+                }
+                this.data[minIndex] = this.data[this.data.length - 1];
+                this.data.pop();
+                return min;
+            }
+
+            insert (data) {
+                this.data.push(data);
+            }
+        }
+
+
+
         const map = localStorage.getItem('map') && JSON.parse(localStorage.getItem('map')) || Array(100*100).fill(0);
         
         show()
@@ -87,7 +116,7 @@
 
         // 寻路
         async function path(map, start, end) {
-            const queue = [start];
+            const queue = new MinHeap([start], (a, b) => distance(a, end) - distance(b, end));
             let table = clone(map);
 
             let container = document.getElementById('container');
@@ -95,20 +124,27 @@
             let [x, y] = end;
             cells[x + y*100].style.boxShadow = '0 0 2px 2px red inset';
 
-            let insert = (x, y, pre) => {
-                if (x < 0 || x >= 100 || y < 0 || y >= 100) return;
-                let point = x + y*100;
-                if (table[point]) return;
-                table[point] = pre;
-                queue.push([x, y]);
+            let distance = (p1, p2) => {
+                return (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2;
             }
 
-            while (queue.length) {
-                let [x, y] = queue.shift();
-                // 可视化
-                cells[x + y*100].style.backgroundColor = 'lightgreen';
-                // await sleep(0);
+            let insert = async (x, y, pre) => {
+                if (x < 0 || x >= 100 || y < 0 || y >= 100) return;
+                let point = x + y*100;
+                if (table[point] === 1) return;
+                if (table[point]) {
+                    return;
+                };
+                table[point] = pre;
+                queue.insert([x, y]);
 
+                // 可视化
+                cells[point].style.backgroundColor = 'lightgreen';
+                await sleep(0);
+            }
+
+            while (queue.data.length) {
+                let [x, y] = queue.take();
                 if (x === end[0] && y === end[1]) {
                     let way = [x + y*100];
                     while(x !== start[0] || y !== start[1]) {
@@ -119,15 +155,15 @@
                     }
                     return way;
                 };
-                insert(x - 1, y, [x, y]);
-                insert(x + 1, y, [x, y]);
-                insert(x, y - 1, [x, y]);
-                insert(x, y + 1, [x, y]);
 
-                insert(x-1, y-1, [x, y]);
-                insert(x+1, y-1, [x, y]);
-                insert(x-1, y+1, [x, y]);
-                insert(x+1, y+1, [x, y]);
+                await insert(x - 1, y, [x, y]);
+                await insert(x + 1, y, [x, y]);
+                await insert(x, y - 1, [x, y]);
+                await insert(x, y + 1, [x, y]);
+                await insert(x-1, y-1, [x, y]);
+                await insert(x+1, y-1, [x, y]);
+                await insert(x-1, y+1, [x, y]);
+                await insert(x+1, y+1, [x, y]);
             }
             return null;
         }
