@@ -36,131 +36,69 @@
         }
 
         console.log(expression(source))
-        // 四则运算 AST
-function expression(source) {
-  if (source[1].type === 'EOF') {
-    return {
-      type: 'Expression',
-      AdditiveExpression: source[0]
-    };
-  }
-  additiveExpression(source);
-  return expression(source);
-}
+        function expression(source) {
+            if (source[1].type === 'EOF') {
+                let node = {
+                    type: 'Expression',
+                    children: [source[0], source[1]]
+                };
+                source[0] = node;      
+                source.pop();          
+                return source;
+            }
+            additiveExpression(source);
+            return expression(source);
+        }
 
-function additiveExpression(source) {
-  if (source[0].type === 'MultiplicativeExpression') {
-    let node = {
-    	type: 'AdditiveExpression',
-      MultiplicativeExpression: source[0]
-    };
-    source[0] = node;
-    return additiveExpression(source);
-  }
-  if (source[0].type === 'AdditiveExpression' && source[1] && source[1].type.match(/^[+-]$/)) {
-    let node = {
-      type: 'AdditiveExpression',
-      AdditiveExpression: source[0],
-      operator: source[1].value
-    };
-    source.shift();
-    source.shift();
-    multiplicativeExpression(source);
-    node.MultiplicativeExpression = source[0];
-    source[0] = node;
-    return additiveExpression(source);
-  }
-  if (source[0].type === 'number') {
-    multiplicativeExpression(source);
-    additiveExpression(source);
-  }
-}
+        function additiveExpression(source) {
+            if (source[0].type === 'MultiplicativeExpression') {
+                let node = {
+                    type: 'AdditiveExpression',
+                    children: [source[0]]
+                };
+                source[0] = node;
+                return additiveExpression(source);
+            } 
+            if (source[0].type === 'AdditiveExpression' && source[1] && source[1].type.match(/^[+-]$/)) {
+                let node = {
+                    type: 'AdditiveExpression',
+                    children: [source[0], source[1]],
+                    operator: source[1].type
+                };
+                source.shift();
+                source.shift();
+                multiplicativeExpression(source);
+                node.children.push(source[0]);
+                source[0] = node;
+                return additiveExpression(source);
+            }
+            if (source[0].type === 'number') {
+                multiplicativeExpression(source);
+                additiveExpression(source);
+            }   
+        }
 
-function multiplicativeExpression(source) {
-	if (source[0].type === 'number') {
-  	let node = {
-      type: 'MultiplicativeExpression',
-      number: source[0].value
-    };
-    source[0] = node;
-    return multiplicativeExpression(source)
-  }
-  if (source[0].type === 'MultiplicativeExpression' && source[1] && source[1].type.match(/^[*/]$/)) {
-  	let node = {
-      type: 'MultiplicativeExpression',
-      MultiplicativeExpression: source[0],
-      operator: source[1].value,
-      number: source[2].value
-    };
-    source.shift();
-    source.shift();
-    source[0] = node;
-    return multiplicativeExpression(source)
-  }
-}
-        // function expression(source) {
-        //     if (source[1].type === 'EOF') {
-        //         let node = {
-        //             type: 'Expression',
-        //             children: [source[0], source[1]]
-        //         };
-        //         source[0] = node;      
-        //         source.pop();          
-        //         return source;
-        //     }
-        //     additiveExpression(source);
-        //     return expression(source);
-        // }
-
-        // function additiveExpression(source) {
-        //     if (source[0].type === 'MultiplicativeExpression') {
-        //         let node = {
-        //             type: 'AdditiveExpression',
-        //             children: [source[0]]
-        //         };
-        //         source[0] = node;
-        //         return additiveExpression(source);
-        //     } 
-        //     if (source[0].type === 'AdditiveExpression' && source[1] && source[1].type.match(/^[+-]$/)) {
-        //         let node = {
-        //             type: 'AdditiveExpression',
-        //             children: [source[0], source[1]],
-        //             operator: source[1].type
-        //         };
-        //         source.shift();
-        //         source.shift();
-        //         multiplicativeExpression(source);
-        //         node.children.push(source[0]);
-        //         source[0] = node;
-        //         return additiveExpression(source);
-        //     }
-        //     if (source[0].type === 'number') {
-        //         multiplicativeExpression(source);
-        //         additiveExpression(source);
-        //     }   
-        // }
-
-        // function multiplicativeExpression(source) {
-        //     if (source[0].type === 'number') {
-        //         let node = {
-        //             type: 'MultiplicativeExpression',
-        //             children: [source[0]]
-        //         }
-        //         source[0] = node;
-        //         return multiplicativeExpression(source);
-        //     }
-        //     if (source[0].type === 'MultiplicativeExpression' && source[1] && source[1].type.match(/^[*/]$/)) {
-        //         let node = {
-        //             type: 'MultiplicativeExpression',
-        //             children: [source[0], source[1], source[2]],
-        //             operator: source[1].type
-        //         }
-        //         source.shift();
-        //         source.shift();
-        //         source[0] = node;
-        //         return multiplicativeExpression(source);
-        //     }
-        // }
+        function multiplicativeExpression(source) {
+            if (source[0].type === 'number') {
+                let node = {
+                    type: 'MultiplicativeExpression',
+                    children: [source[0]]
+                }
+                source[0] = node;
+                return multiplicativeExpression(source);
+            }
+            if (source[0].type === 'MultiplicativeExpression' && source[1] && source[1].type.match(/^[*/]$/)) {
+                let node = {
+                    type: 'MultiplicativeExpression',
+                    children: [source[0], source[1], source[2]],
+                    operator: source[1].type
+                }
+                source.shift();
+                source.shift();
+                source[0] = node;
+                return multiplicativeExpression(source);
+            }
+        }
         /*
             expression := additiveExpression 
             additiveExpression := multiplicativeExpression |
