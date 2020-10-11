@@ -1,48 +1,56 @@
+/*  查找*号
+    无*，直接对比
+    有*，对比首个*的前缀
+        依次匹配首尾*号间的字符
+        匹配后缀
+
+    ? 特殊处理
+        正则匹配
+*/
 function find(source, pattern) {
-    let startCount = 0;
-    for (let i = 0; i < pattern.length; i++) {
-        if (pattern[i] === '*') startCount++;
+    if (pattern === '') return true;
+
+    let counter = 0;
+    for (let char of pattern) {
+        if (char === '*') counter ++; 
     }
-    if (startCount === 0) {
+
+    if (counter === 0) {
+        if (source.length !== pattern.length) return false;
         for (let i = 0; i < pattern.length; i ++) {
-            if (pattern[i] !== source[i] && pattern[i] !== '?')
-                return false;
+            if (pattern[i] !== source[i] && pattern[i] !== '?') return false;
         }
         return true;
     }
 
     let i = 0;
-    let lastIndex = 0;
-
-    for (i = 0; pattern[i] !== '*'; i++) {
-        if (pattern[i] !== source[i] && pattern[i] !== '?')
-            return false;
+    while (pattern[i] !== '*') {
+        if (pattern[i] !== source[i] && pattern[i] !== '?') return false;
+        i ++;
     }
 
-    lastIndex = i;
-
-    for (let p = 0; p < startCount - 1; p++) {
-        i++;
-        let subPattern = '';
-        while(pattern[i] !== '*') {
-            subPattern += pattern[i];
-            i++;
+    let lastIndex = i;
+    for (let j = 1; j < counter; j ++) {
+        let str = '';
+        i ++;
+        while (pattern[i] !== '*') {
+            str += pattern[i];
+            i ++;
         }
+        let reg = new RegExp(str.replace(/\?/g, '[\\s\\S]'), 'g');
 
-        let reg = new RegExp(subPattern.replace(/\?/g, '[\\s\\S]'), 'g');
         reg.lastIndex = lastIndex;
-
         if (!reg.exec(source)) return false;
         lastIndex = reg.lastIndex;
     }
 
     i ++;
-    for (let j = 1; i < pattern.length - 1; i ++, j ++) {
-        if (pattern[pattern.length - j] !== source[source.length - j] 
-            && pattern[pattern.length - j] !== '?' 
-            || (source.length - j) < lastIndex) {
-            return false;
-        }
+    let pLen = pattern.length;
+    let sLen = source.length;
+    if (sLen - lastIndex < pLen - i) return false;
+    for (let j = 1;i < pLen; i ++, j ++) {
+        if (pattern[pLen - j] !== source[sLen - j] 
+            && pattern[pLen - j] !== '?') return false;
     }
 
     return true;
@@ -50,3 +58,10 @@ function find(source, pattern) {
 
 console.log(find('abcavaabaplmmqaghn', 'a*aab?*?m*ag?n'));
 console.log(find('aab', 'aab'));
+console.log(find('aabbbbbab', 'aab*b?'));
+console.log(find('aabbbbbab', 'aabc*ab'));
+console.log(find('aabbbbbab', ''));
+console.log(find('', 'aaa'));
+
+// expect
+// true ture false false true false

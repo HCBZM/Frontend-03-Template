@@ -1,47 +1,46 @@
-let $ = Symbol('end');
-
+const $ = Symbol('end');
 class Trie {
     constructor() {
         this.root = new Map;
     }
 
     insert (str) {
-        let node = this.root;
+        let root = this.root;
         for (let char of str) {
-            if (node.has(char)) {
-                node = node.get(char);
-                continue;
-            }
-            let newMap = new Map;
-            node.set(char, newMap);
-            node = newMap;
+            if (!root.has(char)) root.set(char, new Map);
+            root = root.get(char);
         }
-        if (!node.has($)) node.set($, 0);
-        node.set($, node.get($) + 1);
+
+        if (root.has($)) root.set($, root.get($) + 1);
+        else root.set($, 1);
     }
 
     max () {
         let max = 0;
-        let maxWord;
-        let node = this.root;
-        let visit = (node, word) => {
-            if (node.has($) && node.get($) > max) {
-                max = node.get($);
-                maxWord = word;
-            }
-            for (let [key, value] of node) {
-                if (key === $) continue;
-                visit(value, word + key);
+        let maxWord = '';
+
+        let each = (root, word) => {
+            for (let [k, v] of root) {
+                if (k === $) {
+                    max = v > max ? v : max;
+                    maxWord = word;
+                    continue;
+                }
+                each(v, word + k);
             }
         }
-        visit(node, '');
-        console.log(max, maxWord);
+
+        each(this.root, '');
+        return {
+            max,
+            maxWord
+        }
     }
 }
 
-function randomStr(len) {
+function randomStr(time) {
     let result = '';
-    while (result.length < len) {
+    while (result.length < time) {
         result += String.fromCharCode(Math.floor(Math.random()*26) + 97);
     }
     return result;
@@ -49,5 +48,7 @@ function randomStr(len) {
 
 let trie = new Trie;
 for (let i = 0; i < 100000; i ++) {
-    trie.insert(randomStr(4));
+    let str = randomStr(Math.floor(Math.random()*5) + 3);
+    trie.insert(str);
 }
+console.log(trie.max());
