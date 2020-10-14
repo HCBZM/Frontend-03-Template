@@ -1,1 +1,1 @@
-学习笔记
+学习笔记 https://www.yuque.com/docs/share/07fc6118-d427-42ac-af8f-e65e95da84b2?# 《trie、kmp、wildcard》
