@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="text">文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字</div>
+    <div id="dragable" style="display: inline-block;width: 100px;height: 100px;background-color: aqua;"></div>
+    <script>
+        const dragable = document.getElementById('dragable');
+        let baseX = 0;
+        let baseY = 0; 
+
+        dragable.addEventListener('mousedown', e => {
+            let x = e.x - baseX;
+            let y = e.y - baseY;
+            let move = e => {
+                // dragable.style.transform = `translate(${e.x - x}px, ${e.y - y}px)`;
+                let range = getNearest(e.x, e.y);
+                range.insertNode(dragable);
+            };
+            let up = e => {
+                document.removeEventListener('mousemove', move);
+                document.removeEventListener('mouseup', up);
+                baseX = e.x - x;
+                baseY = e.y - y;
+            };
+
+            document.addEventListener('mousemove', move);
+            document.addEventListener('mouseup', up);
+        });
+
+        const ranges = [];
+        const textWrap = document.getElementById('text');
+        for (let i = 0; i < textWrap.childNodes[0].textContent.length + 1; i ++) {
+            let range = new Range;
+            range.setStart(textWrap.childNodes[0], i);
+            ranges.push(range);
+        }
+        
+        function getNearest(x, y) {
+            let min = Infinity;
+            let nearest = null;
+
+            for (let range of ranges) {
+                let rect = range.getBoundingClientRect();
+                let distance = (rect.x - x) ** 2 + (rect.y - y) ** 2;
+                if (distance < min) {
+                    min = distance;
+                    nearest = range;
+                }
+            }
+
+            return nearest;
+        }
+
+        document.addEventListener('selectstart', e => e.preventDefault());
+    </script>
+</body>
+</html>
