@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        div {
+            width: 100px;
+            height: 100px;
+            background-color: aqua;
+        }
+    </style>
+</head>
+<body>
+    <div id="aqua"></div>
+    <div id="coral" style="background-color: lightcoral;"></div>
+    <button id="pause">Pause</button>
+    <button id="resume">Resume</button>
+    <script src="./animation.js"></script>
+    <script src="./cubicBezier.js"></script>
+    <script >
+        let tl = new TimeLine;
+        let animation = new Animation(document.getElementById('aqua').style, 'transform', 0, 500, 1500, 500, cubicBezier.ease, v => `translateX(${v}px)`);
+        tl.add(animation);
+        // tl.add(new Animation(document.getElementById('coral').style, 'transform', 0, 500, 1500, 500, null, v => `translateX(${v}px)`))
+        // setTimeout(() => {
+        //     tl.add(new Animation(document.getElementById('coral').style, 'transform', 100, 500, 1500, 0, null, v => `translateX(${v}px)`));
+        // }, 500);
+        tl.start();
+        document.getElementById('coral').style.transition = 'transform ease 1.5s 500ms';
+        document.getElementById('coral').style.transform = 'translateX(500px)';
+
+        document.getElementById('pause').addEventListener('click', () => tl.pause());
+        document.getElementById('resume').addEventListener('click', () => tl.resume());
+        
+    </script>
+</body>
+</html>
