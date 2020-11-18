@@ -34,7 +34,7 @@ class Carousel {
 
                 let next = Math.sign(x % width - width / 2 * Math.sign(x));
                 next = next === 0 
-                    ? next > 0 ? 1 : -1
+                    ? x > 0 ? 1 : -1
                     : next;
                 for (let offset of [next, 0]) {
                     let index = current + offset;
