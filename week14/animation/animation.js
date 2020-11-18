@@ -25,6 +25,7 @@ class TimeLine {
                 if (t >= animation.duration) {
                     t = animation.duration;
                     this[ANIMATIONS].delete(animation);
+                    this[START_TIME].delete(animation);
                 }
 
                 if (t > 0) animation.receive(t);
@@ -63,6 +64,11 @@ class TimeLine {
     }
 
     add (animation, startTime) {
+        // for (let animation of this[ANIMATIONS]) {
+        //     animation.delay += this[PAUSE_TIME];
+        // }
+        // this[PAUSE_TIME] = 0;
+        
         this[ANIMATIONS].add(animation);
         this[START_TIME].set(animation, startTime || Date.now());
     }
