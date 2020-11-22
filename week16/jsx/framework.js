@@ -1,12 +1,23 @@
+export const STATE = Symbol('state');
+export const ATTRIBUtE = Symbol('attribute');
+
 export class Component {
-    setAttribute (prop, val) {
-        this.root.setAttribute(prop, val);
+    constructor () {
+        this[ATTRIBUtE] = Object.create(null);
+        this[STATE] = Object.create(null);
+    }
+    setAttribute (name, value) {
+        this[ATTRIBUtE][name] = value;
     }
     mountTo (parent) {
+        if (!this.root) this.render();
         parent.appendChild(this.root);
     }
     appendChild (child) {
         child.mountTo(this.root);
+    }
+    triggerEvent (type, args) {
+        this[ATTRIBUtE][`on${type.replace(/^[\s\S]/, v => v.toUpperCase())}`](new CustomEvent(type, {detail: args}));
     }
 }
 
