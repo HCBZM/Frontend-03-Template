@@ -19,6 +19,9 @@ export class Component {
     triggerEvent (type, args) {
         this[ATTRIBUtE][`on${type.replace(/^[\s\S]/, v => v.toUpperCase())}`](new CustomEvent(type, {detail: args}));
     }
+    render () {
+        return this.root;
+    }
 }
 
 class ElementWrapper extends Component {
@@ -26,6 +29,9 @@ class ElementWrapper extends Component {
         super();
         this.root = document.createElement(type);
     }
+    setAttribute (name, value) {
+        this.root.setAttribute(name, value);
+    } 
 }
 
 class TextWrapper extends Component {
@@ -44,10 +50,20 @@ export function createElement(type, attributes, ...children) {
     for (let key in attributes) {
         el.setAttribute(key, attributes[key]);
     }
-    for (let child of children) {
-        if (typeof child === 'string')
-            child = new TextWrapper(child);
-        child.mountTo(el.root);
+
+    let reChildren = children => {
+        for (let child of children) {
+            if (typeof child === 'object' && child instanceof Array) {
+                reChildren(child);
+                continue;
+            }
+
+            if (typeof child === 'string')
+                child = new TextWrapper(child);
+            el.appendChild(child);
+        }
     }
+    reChildren(children);
+    
     return el;
 }

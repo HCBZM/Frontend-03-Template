@@ -1,4 +1,4 @@
-import {Component, STATE, ATTRIBUtE} from './framework.js';
+import {Component, STATE, ATTRIBUtE, createElement} from './framework.js';
 import {TimeLine, Animation} from './packages/animation.js';
 import {ease} from './packages/cubicBezier.js';
 import {enableGesture} from './packages/gestrue';
@@ -10,13 +10,16 @@ export class Carousel extends Component {
         super();
     }
     render () {
-        this.root = document.createElement('div');
-        this.root.classList.add('carousel');
-        for (let src of this[ATTRIBUtE].images) {
-            let img = document.createElement('div');
-            img.style.backgroundImage = `url(${src.img})`;
-            this.root.appendChild(img);
-        }
+        this.children = this[ATTRIBUtE].images.map(this.template);
+        this.root = (<div class={this[ATTRIBUtE].class}>{this.children}</div>).render();
+        
+        // this.root = document.createElement('div');
+        // this.root.classList.add('carousel');
+        // for (let src of this[ATTRIBUtE].images) {
+        //     let img = document.createElement('div');
+        //     img.style.backgroundImage = `url(${src.img})`;
+        //     this.root.appendChild(img);
+        // }
 
         enableGesture(this.root);
         this.timeline = new TimeLine().start();
@@ -120,5 +123,10 @@ export class Carousel extends Component {
         this.handler = setInterval(nextPicture, 3000);
 
         return this.root;
+    }
+
+    appendChild (child) {
+        this.template = child;
+        this.render();
     }
 }
