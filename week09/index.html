@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .map-wrapper {
+            width: 600px;
+            border-left: 1px solid #999;
+            border-top: 1px solid #999;
+            font-size: 0;
+        }
+
+        .map-wrapper .cell {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-right: 1px solid #999;
+            border-bottom: 1px solid #999;
+        }
+        
+        .map-wrapper .way {
+            background-color: lightblue;
+        }
+        .map-wrapper .reroute {
+            background-color: pink;
+        }
+        .map-wrapper .start-point {
+            background-color: green;
+        }
+        .map-wrapper .end-point {
+            background-color: red;
+        }
+        .map-wrapper .wall {
+            background-color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="map-wrapper" id="map"></div>
+    <button id="save">save</button><button id="clearMap">clear</button>
+    <script>
+        const map = localStorage['map'] ? JSON.parse(localStorage['map']) : Array(100 * 100).fill(null);
+        
+        // 显示出地图
+        showMap()
+        function showMap() {
+            let wrapper = document.getElementById('map');
+            let fragment = document.createDocumentFragment();
+            for (let i = 0; i < map.length - 1; i ++) {
+                let cell = document.createElement('div');
+                let cls = cell.classList;
+                cls.add('cell');
+                if (map[i] === 'wall') {
+                    cls.add('wall');
+                }
+                cell.setAttribute('data-id', i);
+                fragment.appendChild(cell);
+            }
+            wrapper.appendChild(fragment);
+
+            // 绑定画图事件
+            wrapper.addEventListener('mousedown', event => {
+                let clear = event.button ? true : false;
+                let move = event => {
+                    let target = event.target;
+                    let cls = target.classList;
+                    if (cls.contains('cell')) {
+                        if (!clear && !cls.contains('wall')) {
+                            cls.add('wall');
+                            map[target.getAttribute('data-id')] = 'wall';
+                        } 
+                        if (clear && cls.contains('wall')) {
+                            cls.remove('wall');
+                            map[target.getAttribute('data-id')] = null;
+                        }
+                    }
+                };
+                let up = event => {
+                    document.removeEventListener('mousemove', move);
+                    document.removeEventListener('mouseup', up);
+                };
+                
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', up);
+            })
+            // 取消默认选中事件；
+            wrapper.addEventListener('selectstart', e => e.preventDefault());
+            wrapper.addEventListener('contextmenu', e => e.preventDefault());
+        }
+        // 保存地图
+        document.getElementById('save').addEventListener('click', e => {
+            localStorage['map'] = JSON.stringify(map.map(v => v === 'wall' ? v : null));
+        });
+        document.getElementById('clearMap').addEventListener('click', e => {
+            localStorage['map'] = '';
+        });
+
+
+        // 寻路
+        async function findPath(start, end) {
+            let [startX, startY] = start, [endX, endY] = end;
+            let cells = Array.from(document.getElementById('map').children);
+            cells[startX + startY * 100].classList.add('start-point');
+            cells[endX + endY * 100].classList.add('end-point');
+
+            // A*算法
+            let distance = (a) => (a[0] - endX) ** 2 + (a[1] - endY) ** 2;
+            let compare = (a, b) => distance(a) - distance(b);
+            let points = new BinaryHeap([start], compare);
+            let mapCopy = Object.create(map);
+            let table = Array(map.length).fill(Infinity);
+            table[startX + startY * 100] = 0;
+            let insert = async (p, prev, fromStart) => {
+                let [x, y] = p;
+                if (x < 0 || x > 99 || y < 0 || y > 99) return;
+                if (mapCopy[x + y * 100] !== null) return;
+                // if (mapCopy[x + y * 100] === 'wall') return;
+                // if (fromStart >= table[x + y * 100]) return;
+                mapCopy[x + y * 100] = prev;
+                // table[x + y * 100] = fromStart;
+                cells[x + y * 100].classList.add('way');
+                await new Promise(res => setTimeout(res, 10));
+                points.insert(p);
+            }
+            while(points.length) {
+                let [x, y] = points.get();
+                let fromStart = table[x + y * 100];
+                if (x === endX && y === endY) {
+                    let paths = [[x, y]];
+                    let [prevX, prevY] = mapCopy[x + y * 100];
+                    while (prevX !== startX || prevY !== startY) {
+                        paths.push([prevX, prevY]);
+                        await new Promise(res => setTimeout(res, 50));
+                        cells[prevX + prevY * 100].classList.add('reroute');
+                        [prevX, prevY] = mapCopy[prevX + prevY * 100];
+                    }
+                    paths.push([startX, startY]);
+                    return 'success!';
+                }
+                await insert([x, y - 1], [x, y], fromStart + 10);
+                await insert([x, y + 1], [x, y], fromStart + 10);
+                await insert([x - 1, y], [x, y], fromStart + 10);
+                await insert([x + 1, y], [x, y], fromStart + 10);
+
+                await insert([x - 1, y - 1], [x, y], fromStart + 14);
+                await insert([x + 1, y - 1], [x, y], fromStart + 14);
+                await insert([x - 1, y + 1], [x, y], fromStart + 14);
+                await insert([x + 1, y + 1], [x, y], fromStart + 14);
+            }
+        }
+
+
+        // 数据结构
+        class BinaryHeap {
+            constructor (data, compare) {
+                this.data = data;
+                this.compare = compare || ((a, b) => a - b);
+            }
+
+            get () {
+                if (this.data.length === 0) return null; 
+                let min = this.data[0];
+                let index = 0;
+
+                while (index < this.data.length) {
+                    // 无子节点
+                    if (index * 2 + 1 >= this.data.length) break;
+
+                    // 只有一个子节点
+                    if (index * 2 + 2 >= this.data.length) {
+                        this.data[index] = this.data[index*2 + 1];
+                        this.data[index*2 + 1] = min;
+                        index = index * 2 + 1;
+                        break;
+                    }
+
+                    // 有两个子节点
+                    if (this.compare(this.data[index * 2 + 1], this.data[index * 2 + 2]) > 0) {
+                        this.data[index] = this.data[index * 2 + 2];
+                        this.data[index * 2 + 2] = min;
+                        index = index * 2 + 2;
+                    } else {
+                        this.data[index] = this.data[index * 2 + 1];
+                        this.data[index * 2 + 1] = min;
+                        index = index * 2 + 1;
+                    }
+                }
+
+                if (index === this.data.length - 1)
+                    this.data.pop();
+                else
+                    this.insertAt(this.data.pop(), index);
+
+                return min;
+            }
+
+            insert (val) {
+                this.insertAt(val, this.data.length);
+            }
+
+            insertAt (val, index) {
+                this.data[index] = val;
+                while (Math.floor((index - 1) / 2) >= 0 && this.compare(this.data[Math.floor((index - 1) / 2)], val) > 0) {
+                    this.data[index] = this.data[Math.floor((index - 1) / 2)];
+                    this.data[Math.floor((index - 1) / 2)] = val;
+                    index = Math.floor((index - 1) / 2);
+                }
+            }
+
+            get length () {
+                return this.data.length;
+            }
+        }
+
+        // let minHeap = new BinaryHeap([2]);
+        // minHeap.insert(1);
+        // minHeap.insert(22);
+        // minHeap.insert(3);
+        // minHeap.insert(100);
+        // minHeap.insert(44);
+        // minHeap.insert(21);
+        // minHeap.insert(12);
+        // minHeap.insert(21);
+        // minHeap.insert(21);
+        // minHeap.insert(4);
+        // minHeap.insert(1);
+        // minHeap.insert(22);
+        // minHeap.insert(3);
+        // minHeap.insert(100);
+        // minHeap.insert(44);
+        // minHeap.insert(21);
+        // minHeap.insert(12);
+        // minHeap.insert(21);
+        // minHeap.insert(21);
+        // minHeap.insert(4);
+    </script>
+</body>
+</html>
