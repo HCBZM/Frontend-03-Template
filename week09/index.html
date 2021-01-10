@@ -115,13 +115,13 @@
             let insert = async (p, prev, fromStart) => {
                 let [x, y] = p;
                 if (x < 0 || x > 99 || y < 0 || y > 99) return;
-                if (mapCopy[x + y * 100] !== null) return;
-                // if (mapCopy[x + y * 100] === 'wall') return;
-                // if (fromStart >= table[x + y * 100]) return;
+                // if (mapCopy[x + y * 100] !== null) return;
+                if (mapCopy[x + y * 100] === 'wall') return;
+                if (fromStart >= table[x + y * 100]) return;
                 mapCopy[x + y * 100] = prev;
-                // table[x + y * 100] = fromStart;
+                table[x + y * 100] = fromStart;
                 cells[x + y * 100].classList.add('way');
-                await new Promise(res => setTimeout(res, 10));
+                await new Promise(res => setTimeout(res, 100));
                 points.insert(p);
             }
             while(points.length) {
